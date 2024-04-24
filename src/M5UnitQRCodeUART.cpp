@@ -38,36 +38,26 @@ String M5UnitQRCodeUART::getFirmwareVersion(void) {
 }
 
 bool M5UnitQRCodeUART::setStartTone(StartTone tone) {
-    const uint8_t cmd[] = {
-        static_cast<uint8_t>(ProtocolPackageType::ConfigurationWrite), 0x63,
-        0x45, static_cast<uint8_t>(tone)};
-    send(cmd, sizeof(cmd));
-    delay(COMMAND_INTERVAL_MS);
-    flush();  // XXX
-    return true;
+    const uint8_t params[] = {static_cast<uint8_t>(tone)};
+    return sendConfigurationWrite(0x63, 0x45, params,
+                                  sizeof(params) / sizeof(params[0]));
 }
 
 bool M5UnitQRCodeUART::setReadSuccessTone(ReadSuccessTone tone) {
-    const uint8_t cmd[] = {
-        static_cast<uint8_t>(ProtocolPackageType::ConfigurationWrite), 0x63,
-        0x46, static_cast<uint8_t>(tone)};
-    send(cmd, sizeof(cmd));
-    delay(COMMAND_INTERVAL_MS);
-    flush();  // XXX
-    return true;
+    const uint8_t params[] = {static_cast<uint8_t>(tone)};
+    return sendConfigurationWrite(0x63, 0x46, params,
+                                  sizeof(params) / sizeof(params[0]));
 }
 
 bool M5UnitQRCodeUART::setReadSuccessToneTimes(ReadSuccessToneTimes times) {
-    const uint8_t cmd[] = {
-        static_cast<uint8_t>(ProtocolPackageType::ConfigurationWrite), 0x63,
-        0x42, static_cast<uint8_t>(times)};
-    send(cmd, sizeof(cmd));
-    delay(COMMAND_INTERVAL_MS);
-    flush();  // XXX
-    return true;
+    const uint8_t params[] = {static_cast<uint8_t>(times)};
+    return sendConfigurationWrite(0x63, 0x42, params,
+                                  sizeof(params) / sizeof(params[0]));
 }
 
 bool M5UnitQRCodeUART::send(const uint8_t* data, size_t size) {
+    ESP_LOGD(STR(ESP_LOG_TAG), "Sending:");
+    ESP_LOG_BUFFER_HEXDUMP(STR(ESP_LOG_TAG), data, size, ESP_LOG_DEBUG);
     return this->_serial->write(data, size) == size;
 }
 
@@ -80,6 +70,7 @@ bool M5UnitQRCodeUART::receive(void) {
     while (this->_serial->available()) {
         this->_rx_buf[this->_rx_buf_pos++] = this->_serial->read();
     }
+    ESP_LOGD(STR(ESP_LOG_TAG), "Receiving:");
     ESP_LOG_BUFFER_HEXDUMP(STR(ESP_LOG_TAG), this->_rx_buf, this->_rx_buf_pos,
                            ESP_LOG_DEBUG);
     return true;
@@ -130,7 +121,7 @@ bool M5UnitQRCodeUART::isValidID(uint8_t pid, uint8_t fid) const {
 bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
     const uint8_t t = static_cast<uint8_t>(ProtocolPackageType::StatusRead);
     const uint8_t cmd[] = {t, pid, fid};
-    if (!send(cmd, sizeof(cmd))) {
+    if (!send(cmd, sizeof(cmd) / sizeof(cmd[0]))) {
         ESP_LOGE(STR(ESP_LOG_TAG),
                  "Failed to send command: 0x%02X 0x%02X 0x%02X", t, pid, fid);
         return false;
@@ -155,5 +146,72 @@ bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
     }
     ESP_LOGD(STR(ESP_LOG_TAG), "Received Parameter Length: %d",
              getReceivedParameterSize());
+    return true;
+}
+
+bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
+                                              const uint8_t* param,
+                                              uint16_t size) {
+    const uint8_t len = (fid >> 6);
+    uint8_t cmd[3 + size + (len == 3 ? 2 : 0)] = {
+        static_cast<uint8_t>(ProtocolPackageType::ConfigurationWrite),
+        pid,
+        fid,
+    };
+    if (len == 3) {
+        cmd[3] = highByte(size);
+        cmd[4] = lowByte(size);
+        for (size_t i = 0; i < size; ++i) {
+            cmd[5 + i] = param[i];
+        }
+    } else if (len == 2) {
+        cmd[3] = param[0];
+        cmd[4] = param[1];
+    } else if (len == 1) {
+        cmd[3] = param[0];
+    }
+    ESP_LOG_BUFFER_HEXDUMP(STR(ESP_LOG_TAG), cmd, sizeof(cmd) / sizeof(cmd[0]),
+                           ESP_LOG_DEBUG);
+    if (!send(cmd, sizeof(cmd) / sizeof(cmd[0]))) {
+        ESP_LOGE(STR(ESP_LOG_TAG),
+                 "Failed to send command: 0x%02X 0x%02X 0x%02X", cmd[0], cmd[1],
+                 cmd[2]);
+        return false;
+    }
+    delay(COMMAND_INTERVAL_MS);
+    if (!receive()) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
+        return false;
+    }
+    if (!isValidReply(ProtocolPackageType::ConfigurationWriteReply)) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
+                 this->_rx_buf[COMMAND_TYPE_OFFSET]);
+        return false;
+    }
+    if (!isValidID(pid, fid)) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal reply: 0x%02X 0x%02X 0x%02X",
+                 getReceivedType(), getReceivedPID(), getReceivedFID());
+    }
+    if (fid & 0b01000000) {
+        if (this->_rx_buf[3] != param[0]) {
+            ESP_LOGE(STR(ESP_LOG_TAG),
+                     "PAR is not equal to the sent value: expected = 0x%02X, "
+                     "actual = 0x%02X",
+                     param[0], this->_rx_buf[3]);
+            return false;
+        }
+    } else {
+        if (this->_rx_buf[3] != 0x00) {
+            ESP_LOGE(STR(ESP_LOG_TAG),
+                     "PAR is invalid: expected = 0x00, actual = 0x%02X",
+                     this->_rx_buf[3]);
+            return false;
+        }
+    }
+    if (this->_rx_buf[4] == 0x01) {
+        ESP_LOGE(STR(ESP_LOG_TAG),
+                 "Invalid PID/FID: pid = 0x%02X, fid = 0x%02X", pid, fid);
+        return false;
+    }
     return true;
 }

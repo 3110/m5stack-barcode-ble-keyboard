@@ -78,6 +78,8 @@ protected:
     virtual bool isValidReply(ProtocolPackageType type) const;
     virtual bool isValidID(uint8_t pid, uint8_t fid) const;
     virtual bool sendStatusQuery(uint8_t pid, uint8_t fid);
+    virtual bool sendConfigurationWrite(uint8_t pid, uint8_t fid,
+                                        const uint8_t* param, uint16_t size);
 
 private:
     HardwareSerial* _serial;
