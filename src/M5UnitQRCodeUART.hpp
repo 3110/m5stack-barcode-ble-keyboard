@@ -1,6 +1,7 @@
 #pragma once
 
 #include "M5UnitQRCode.hpp"
+#include "ProtocolCommandParameter.hpp"
 
 class M5UnitQRCodeUART : public M5UnitQRCode {
 public:
@@ -15,40 +16,6 @@ public:
     static constexpr size_t PARAMETER_SIZE_OFFSET = FID_OFFSET + 1;
     static constexpr size_t PARAMETER_VALUE_OFFSET = PARAMETER_SIZE_OFFSET + 2;
 
-    enum class ProtocolPackageType : uint8_t
-    {
-        ConfigurationWrite = 0x21,
-        ConfigurationWriteReply = 0x22,
-        ConfigurationRead = 0x23,
-        ConfigurationReadReply = 0x24,
-        ControlInstruction = 0x32,
-        ControlReply = 0x33,
-        StatusRead = 0x43,
-        StatusReply = 0x44,
-        ImageRead = 0x60,
-        ImageReply = 0x61,
-    };
-
-    enum class StartTone : uint8_t
-    {
-        Off = 0x00,
-        FourTones = 0x01,
-        TwoTones = 0x02,
-    };
-
-    enum class ReadSuccessTone : uint8_t
-    {
-        Off = 0x00,
-        On = 0x01,
-    };
-
-    enum class ReadSuccessToneTimes : uint8_t
-    {
-        Zero = 0x00,
-        One = 0x01,
-        Two = 0x02,
-    };
-
     M5UnitQRCodeUART(HardwareSerial& serial, uint8_t rx, uint8_t tx,
                      uint32_t baudrate = DEFAULT_BAUDRATE);
     virtual ~M5UnitQRCodeUART(void) = default;
@@ -58,6 +25,8 @@ public:
 
     virtual String getFirmwareVersion(void) override;
     virtual String getBarcode(void) override;
+    virtual bool readBurstMode(BurstMode& burstMode);
+    virtual bool setBurstMode(BurstMode burstMode);
 
     virtual bool setStartTone(StartTone tone);
     virtual bool setReadSuccessTone(ReadSuccessTone tone);
@@ -80,6 +49,8 @@ protected:
 
     virtual bool sendConfigurationWrite(uint8_t pid, uint8_t fid,
                                         const uint8_t* param, uint16_t size);
+    virtual bool sendConfigurationRead(uint8_t pid, uint8_t fid,
+                                       uint8_t& param);
     virtual bool sendStatusQuery(uint8_t pid, uint8_t fid);
 
 private:

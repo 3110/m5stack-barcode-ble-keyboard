@@ -37,6 +37,22 @@ String M5UnitQRCodeUART::getBarcode(void) {
     return String(this->_rx_buf);
 }
 
+bool M5UnitQRCodeUART::readBurstMode(BurstMode& burstMode) {
+    uint8_t param;
+    if (sendConfigurationRead(0x61, 0x41, param)) {
+        burstMode = static_cast<BurstMode>(param);
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool M5UnitQRCodeUART::setBurstMode(BurstMode burstMode) {
+    const uint8_t params[] = {static_cast<uint8_t>(burstMode)};
+    return sendConfigurationWrite(0x61, 0x41, params,
+                                  sizeof(params) / sizeof(params[0]));
+}
+
 bool M5UnitQRCodeUART::setStartTone(StartTone tone) {
     const uint8_t params[] = {static_cast<uint8_t>(tone)};
     return sendConfigurationWrite(0x63, 0x45, params,
@@ -182,6 +198,30 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
                  "Invalid PID/FID: pid = 0x%02X, fid = 0x%02X", pid, fid);
         return false;
     }
+    return true;
+}
+
+bool M5UnitQRCodeUART::sendConfigurationRead(uint8_t pid, uint8_t fid,
+                                             uint8_t& param) {
+    const uint8_t t =
+        static_cast<uint8_t>(ProtocolPackageType::ConfigurationRead);
+    const uint8_t cmd[] = {t, pid, fid};
+    if (!send(cmd, sizeof(cmd) / sizeof(cmd[0]))) {
+        ESP_LOGE(STR(ESP_LOG_TAG),
+                 "Failed to send command: 0x%02X 0x%02X 0x%02X", t, pid, fid);
+        return false;
+    }
+    delay(COMMAND_INTERVAL_MS);
+    if (!receive()) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
+        return false;
+    }
+    if (!isValidReply(ProtocolPackageType::ConfigurationReadReply)) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
+                 this->_rx_buf[COMMAND_TYPE_OFFSET]);
+        return false;
+    }
+    param = this->_rx_buf[PARAMETER_SIZE_OFFSET];
     return true;
 }
 

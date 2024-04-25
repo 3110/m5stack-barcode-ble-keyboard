@@ -7,11 +7,17 @@ M5UnitQRCodeUART barcode(Serial1, UART_RXD, UART_TXD);
 void setup(void) {
     M5.begin();
     barcode.begin();
-    barcode.setStartTone(M5UnitQRCodeUART::StartTone::Off);
+    barcode.setStartTone(StartTone::Off);
     // barcode.setReadSuccessTone(M5UnitQRCodeUART::ReadSuccessTone::Off); //
     // 効かない
-    barcode.setReadSuccessToneTimes(
-        M5UnitQRCodeUART::ReadSuccessToneTimes::Zero);
+    barcode.setReadSuccessToneTimes(ReadSuccessToneTimes::Zero);
+    BurstMode burstMode = BurstMode::MotionInduction;
+    if (barcode.setBurstMode(burstMode)) {
+        M5_LOGI("Change Burst Mode: %s", getName(burstMode));
+    }
+    if (barcode.readBurstMode(burstMode)) {
+        M5_LOGI("Burst Mode: %s", getName(burstMode));
+    }
 }
 
 void loop(void) {
