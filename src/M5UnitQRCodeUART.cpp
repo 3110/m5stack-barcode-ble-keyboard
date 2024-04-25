@@ -25,16 +25,16 @@ bool M5UnitQRCodeUART::available(void) {
     return receive();
 }
 
-String M5UnitQRCodeUART::getBarcode(void) {
-    return String(this->_rx_buf);
-}
-
 String M5UnitQRCodeUART::getFirmwareVersion(void) {
     if (sendStatusQuery(0x02, 0xC1)) {
         return getReceivedParameter();
     } else {
         return "";
     }
+}
+
+String M5UnitQRCodeUART::getBarcode(void) {
+    return String(this->_rx_buf);
 }
 
 bool M5UnitQRCodeUART::setStartTone(StartTone tone) {
@@ -118,37 +118,6 @@ bool M5UnitQRCodeUART::isValidID(uint8_t pid, uint8_t fid) const {
     return getReceivedPID() == pid && getReceivedFID() == fid;
 }
 
-bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
-    const uint8_t t = static_cast<uint8_t>(ProtocolPackageType::StatusRead);
-    const uint8_t cmd[] = {t, pid, fid};
-    if (!send(cmd, sizeof(cmd) / sizeof(cmd[0]))) {
-        ESP_LOGE(STR(ESP_LOG_TAG),
-                 "Failed to send command: 0x%02X 0x%02X 0x%02X", t, pid, fid);
-        return false;
-    }
-    delay(COMMAND_INTERVAL_MS);
-    if (!receive()) {
-        ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
-        return false;
-    }
-    if (!isValidReply(ProtocolPackageType::StatusReply)) {
-        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
-                 this->_rx_buf[COMMAND_TYPE_OFFSET]);
-        return false;
-    }
-    if (this->_rx_buf_pos == 2 && this->_rx_buf[1] == 0x00) {
-        ESP_LOGD(STR(ESP_LOG_TAG), "All queries is not supported");
-        return false;
-    }
-    if (!isValidID(pid, fid)) {
-        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal reply: 0x%02X 0x%02X 0x%02X",
-                 getReceivedType(), getReceivedPID(), getReceivedFID());
-    }
-    ESP_LOGD(STR(ESP_LOG_TAG), "Received Parameter Length: %d",
-             getReceivedParameterSize());
-    return true;
-}
-
 bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
                                               const uint8_t* param,
                                               uint16_t size) {
@@ -213,5 +182,36 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
                  "Invalid PID/FID: pid = 0x%02X, fid = 0x%02X", pid, fid);
         return false;
     }
+    return true;
+}
+
+bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
+    const uint8_t t = static_cast<uint8_t>(ProtocolPackageType::StatusRead);
+    const uint8_t cmd[] = {t, pid, fid};
+    if (!send(cmd, sizeof(cmd) / sizeof(cmd[0]))) {
+        ESP_LOGE(STR(ESP_LOG_TAG),
+                 "Failed to send command: 0x%02X 0x%02X 0x%02X", t, pid, fid);
+        return false;
+    }
+    delay(COMMAND_INTERVAL_MS);
+    if (!receive()) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
+        return false;
+    }
+    if (!isValidReply(ProtocolPackageType::StatusReply)) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
+                 this->_rx_buf[COMMAND_TYPE_OFFSET]);
+        return false;
+    }
+    if (this->_rx_buf_pos == 2 && this->_rx_buf[1] == 0x00) {
+        ESP_LOGD(STR(ESP_LOG_TAG), "All queries is not supported");
+        return false;
+    }
+    if (!isValidID(pid, fid)) {
+        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal reply: 0x%02X 0x%02X 0x%02X",
+                 getReceivedType(), getReceivedPID(), getReceivedFID());
+    }
+    ESP_LOGD(STR(ESP_LOG_TAG), "Received Parameter Length: %d",
+             getReceivedParameterSize());
     return true;
 }
