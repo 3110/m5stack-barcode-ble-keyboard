@@ -192,7 +192,7 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
         ESP_LOGE(STR(ESP_LOG_TAG), "Illegal reply: 0x%02X 0x%02X 0x%02X",
                  getReceivedType(), getReceivedPID(), getReceivedFID());
     }
-    if (fid & 0b01000000) {
+    if (len == 1) {
         if (this->_rx_buf[3] != param[0]) {
             ESP_LOGE(STR(ESP_LOG_TAG),
                      "PAR is not equal to the sent value: expected = 0x%02X, "
