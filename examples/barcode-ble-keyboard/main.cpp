@@ -3,9 +3,9 @@
 #include "BarcodeBLEKeyboard.hpp"
 
 #if defined(USE_I2C)
-#include "M5UnitQRCodeI2C.hpp"
+#include "i2c/M5UnitQRCodeI2C.hpp"
 #elif defined(USE_UART)
-#include "M5UnitQRCodeUART.hpp"
+#include "uart/M5UnitQRCodeUART.hpp"
 #else
 #error "Please define the protocol USE_I2C or USE_UART"
 #endif

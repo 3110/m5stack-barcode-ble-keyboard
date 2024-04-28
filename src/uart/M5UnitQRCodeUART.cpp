@@ -1,4 +1,4 @@
-#include "M5UnitQRCodeUART.hpp"
+#include "uart/M5UnitQRCodeUART.hpp"
 
 M5UnitQRCodeUART::M5UnitQRCodeUART(HardwareSerial& serial, uint8_t rx,
                                    uint8_t tx, uint32_t baudrate)
