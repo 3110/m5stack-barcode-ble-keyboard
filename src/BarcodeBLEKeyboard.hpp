@@ -13,6 +13,8 @@ public:
     virtual bool begin(std::function<bool(void)> onConnected = nullptr,
                        std::function<bool(void)> onDisconnected = nullptr);
     virtual bool update(void);
+    virtual bool isConnected(void);
+
     virtual bool available(void);
     virtual String getFirmwareVersion(void);
     virtual String getBarcode(void);

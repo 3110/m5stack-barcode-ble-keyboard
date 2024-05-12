@@ -96,7 +96,7 @@ void setup(void) {
 void loop(void) {
     M5.update();
 #if defined(ENABLE_NEWLINE_MODE)
-    if (M5.BtnA.wasPressed()) {
+    if (keyboard.isConnected() && M5.BtnA.wasPressed()) {
         newlineMode = !newlineMode;
 #if defined(HAS_LED)
         connectedLED = newlineMode ? LED_NEWLINE_MODE : LED_CONNECTED;

@@ -26,6 +26,10 @@ bool BarcodeBLEKeyboard::update(void) {
     return this->_keyboard.update();
 }
 
+bool BarcodeBLEKeyboard::isConnected(void) {
+    return this->_keyboard.isConnected();
+}
+
 bool BarcodeBLEKeyboard::available(void) {
     return this->_barcode->available();
 }
