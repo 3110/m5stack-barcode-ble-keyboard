@@ -33,12 +33,14 @@ BarcodeBLEKeyboard keyboard(getInstance());
 
 #if defined(HAS_LED)
 const CRGB LED_CONNECTED = CRGB::Green;
-const CRGB LED_DISCONNECTED = CRGB::Red;
+const CRGB LED_DISCONNECTED = CRGB::Black;
 #if defined(ENABLE_NEWLINE_MODE)
-const CRGB LED_NEWLINE_MODE = CRGB::Blue;
+const CRGB LED_NEWLINE_MODE = CRGB::Yellow;
 #endif
+const CRGB LED_ISBN13_VALID = CRGB::Blue;
+const CRGB LED_ISBN13_INVALID = CRGB::Red;
 CRGB led[NUM_LEDS] = {
-    CRGB::Black,
+    LED_DISCONNECTED,
 };
 #endif
 
@@ -66,6 +68,21 @@ bool onDisconnect(void) {
     return true;
 }
 
+#if defined(ENABLE_ISBN13)
+bool isValidISBN13(const String& isbn13) {
+    if (isbn13.length() != 13) {
+        M5_LOGE("Invalid ISBN13 length: %d", isbn13.length());
+        return false;
+    }
+    uint32_t sum = 0;
+    for (size_t i = 0; i < isbn13.length() - 1; ++i) {
+        sum += (isbn13.charAt(i) - '0') * (i % 2 == 0 ? 1 : 3);
+    }
+    uint8_t checkDigit = (10 - (sum % 10)) % 10;
+    return checkDigit == (isbn13.charAt(isbn13.length() - 1) - '0');
+}
+#endif
+
 void setup(void) {
     M5.begin();
 #if defined(HAS_LED)
@@ -92,6 +109,20 @@ void loop(void) {
         const String code = keyboard.getBarcode();
         M5_LOGI("barcode: %s", code.c_str());
         keyboard.send(code);
+#if defined(ENABLE_ISBN13)
+        const bool valid = isValidISBN13(code);
+        if (valid) {
+            M5_LOGI("%s: Valid ISBN13", code.c_str());
+        } else {
+            M5_LOGE("%s: Invalid ISBN13", code.c_str());
+        }
+#if defined(HAS_LED)
+        showLED(valid ? LED_ISBN13_VALID : LED_ISBN13_INVALID);
+        delay(300);
+        showLED(connectedLED);
+#endif
+#endif
+
 #if defined(ENABLE_NEWLINE_MODE)
         if (newlineMode) {
             delay(NEWLINE_MODE_DELAY_MS);
