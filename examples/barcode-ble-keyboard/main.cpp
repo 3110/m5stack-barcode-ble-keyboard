@@ -76,6 +76,7 @@ void loop(void) {
         M5_LOGI("barcode: %s", code.c_str());
         keyboard.send(code);
         if (newlineMode) {
+            delay(NEWLINE_MODE_DELAY_MS);
             keyboard.send(KEY_RETURN);
         }
     }
