@@ -28,6 +28,7 @@ BarcodeBLEKeyboard keyboard(getInstance());
 #define FASTLED_INTERNAL
 #include <FastLED.h>
 
+#if defined(HAS_LED)
 const CRGB LED_CONNECTED = CRGB::Green;
 const CRGB LED_DISCONNECTED = CRGB::Red;
 const CRGB LED_NEWLINE_MODE = CRGB::Blue;
@@ -35,6 +36,7 @@ const CRGB LED_NEWLINE_MODE = CRGB::Blue;
 CRGB led[NUM_LEDS] = {
     CRGB::Black,
 };
+#endif
 
 CRGB connectedLED = LED_CONNECTED;
 
@@ -74,8 +76,10 @@ void loop(void) {
     M5.update();
     if (M5.BtnA.wasPressed()) {
         newlineMode = !newlineMode;
+#if defined(HAS_LED)
         connectedLED = newlineMode ? LED_NEWLINE_MODE : LED_CONNECTED;
         showLED(connectedLED);
+#endif
     }
     keyboard.update();
     if (keyboard.available()) {
