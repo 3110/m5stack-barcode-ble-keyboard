@@ -21,7 +21,10 @@ inline M5UnitQRCode* getInstance(void) {
     return nullptr;
 }
 
+#if defined(ENABLE_NEWLINE_MODE)
 bool newlineMode = false;
+#endif
+
 BarcodeBLEKeyboard keyboard(getInstance());
 
 #if defined(HAS_LED)
@@ -31,8 +34,9 @@ BarcodeBLEKeyboard keyboard(getInstance());
 #if defined(HAS_LED)
 const CRGB LED_CONNECTED = CRGB::Green;
 const CRGB LED_DISCONNECTED = CRGB::Red;
+#if defined(ENABLE_NEWLINE_MODE)
 const CRGB LED_NEWLINE_MODE = CRGB::Blue;
-
+#endif
 CRGB led[NUM_LEDS] = {
     CRGB::Black,
 };
@@ -74,6 +78,7 @@ void setup(void) {
 
 void loop(void) {
     M5.update();
+#if defined(ENABLE_NEWLINE_MODE)
     if (M5.BtnA.wasPressed()) {
         newlineMode = !newlineMode;
 #if defined(HAS_LED)
@@ -81,15 +86,18 @@ void loop(void) {
         showLED(connectedLED);
 #endif
     }
+#endif
     keyboard.update();
     if (keyboard.available()) {
         const String code = keyboard.getBarcode();
         M5_LOGI("barcode: %s", code.c_str());
         keyboard.send(code);
+#if defined(ENABLE_NEWLINE_MODE)
         if (newlineMode) {
             delay(NEWLINE_MODE_DELAY_MS);
             keyboard.send(KEY_RETURN);
         }
+#endif
     }
     delay(10);
 }
