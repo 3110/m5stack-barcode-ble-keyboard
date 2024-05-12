@@ -41,3 +41,7 @@ String BarcodeBLEKeyboard::getBarcode(void) {
 bool BarcodeBLEKeyboard::send(const String& s) {
     return this->_keyboard.write(s.c_str(), s.length());
 }
+
+bool BarcodeBLEKeyboard::send(uint8_t c) {
+    return this->_keyboard.write(c);
+}

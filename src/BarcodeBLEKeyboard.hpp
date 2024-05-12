@@ -18,6 +18,7 @@ public:
     virtual String getBarcode(void);
 
     virtual bool send(const String& s);
+    virtual bool send(uint8_t c);
 
 private:
     M5UnitQRCode* _barcode;
