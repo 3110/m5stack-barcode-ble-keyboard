@@ -9,7 +9,11 @@
 
 class M5UnitQRCode {
 public:
-    M5UnitQRCode(void);
+    M5UnitQRCode(void) {
+#if defined(LOG_LOCAL_LEVEL)
+        esp_log_level_set(STR(ESP_LOG_TAG), LOG_LOCAL_LEVEL);
+#endif
+    }
     virtual ~M5UnitQRCode(void) = default;
 
     virtual bool begin(void) = 0;
