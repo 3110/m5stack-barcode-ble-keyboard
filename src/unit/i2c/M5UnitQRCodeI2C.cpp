@@ -1,4 +1,4 @@
-#include "i2c/M5UnitQRCodeI2C.hpp"
+#include "unit/i2c/M5UnitQRCodeI2C.hpp"
 
 M5UnitQRCodeI2C::M5UnitQRCodeI2C(TwoWire& wire, uint8_t scl_pin,
                                  uint8_t sda_pin, uint8_t addr,

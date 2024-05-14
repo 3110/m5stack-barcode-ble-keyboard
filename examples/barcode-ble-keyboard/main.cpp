@@ -2,21 +2,21 @@
 
 #include "BarcodeBLEKeyboard.hpp"
 
-#if defined(USE_I2C)
-#include "i2c/M5UnitQRCodeI2C.hpp"
-#elif defined(USE_UART)
-#include "uart/M5UnitQRCodeUART.hpp"
+#if defined(USE_UNIT_I2C)
+#include "unit/i2c/M5UnitQRCodeI2C.hpp"
+#elif defined(USE_UNIT_UART)
+#include "unit/uart/M5UnitQRCodeUART.hpp"
 #else
-#error "Please define the protocol USE_I2C or USE_UART"
+#error "Please define the protocol USE_UNIT_I2C or USE_UNIT_UART"
 #endif
 
 inline M5UnitQRCode* getInstance(void) {
-#if defined(USE_I2C)
-    return new M5UnitQRCodeI2C(Wire, I2C_SCL, I2C_SDA);
-#elif defined(USE_UART)
-    return new M5UnitQRCodeUART(Serial1, UART_RXD, UART_TXD);
+#if defined(USE_UNIT_I2C)
+    return new M5UnitQRCodeI2C(Wire, UNIT_I2C_SCL, UNIT_I2C_SDA);
+#elif defined(USE_UNIT_UART)
+    return new M5UnitQRCodeUART(Serial1, UNIT_UART_RXD, UNIT_UART_TXD);
 #else
-#error "Please define the protocol USE_I2C or USE_UART"
+#error "Please define the protocol USE_UNIT_I2C or USE_UNIT_UART"
 #endif
     return nullptr;
 }

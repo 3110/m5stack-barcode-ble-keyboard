@@ -1,7 +1,7 @@
 #pragma once
 
 #include "M5UnitQRCode.hpp"
-#include "uart/ProtocolCommandParameter.hpp"
+#include "unit/uart/ProtocolCommandParameter.hpp"
 
 class M5UnitQRCodeUART : public M5UnitQRCode {
 public:

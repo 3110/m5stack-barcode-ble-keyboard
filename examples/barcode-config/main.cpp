@@ -1,8 +1,8 @@
 #include <M5Unified.h>
 
-#include "uart/M5UnitQRCodeUART.hpp"
+#include "unit/uart/M5UnitQRCodeUART.hpp"
 
-M5UnitQRCodeUART barcode(Serial1, UART_RXD, UART_TXD);
+M5UnitQRCodeUART barcode(Serial1, UNIT_UART_RXD, UNIT_UART_TXD);
 
 void setup(void) {
     M5.begin();
