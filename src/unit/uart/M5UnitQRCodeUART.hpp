@@ -23,6 +23,9 @@ public:
     virtual bool begin(void) override;
     virtual bool available(void) override;
 
+    virtual bool startScan(void) override;
+    virtual bool stopScan(void) override;
+
     virtual String getFirmwareVersion(void) override;
     virtual String getBarcode(void) override;
     virtual bool readBurstMode(BurstMode& burstMode);
@@ -47,11 +50,19 @@ protected:
     virtual bool isValidReply(ProtocolPackageType type) const;
     virtual bool isValidID(uint8_t pid, uint8_t fid) const;
 
+    virtual bool sendControlCommand(const ProtocolPackageType t, uint8_t pid,
+                                    uint8_t fid, const uint8_t* param,
+                                    uint16_t size);
+    virtual bool receiveControlCommand(const ProtocolPackageType t, uint8_t pid,
+                                       uint8_t fid, const uint8_t* param,
+                                       uint16_t size);
     virtual bool sendConfigurationWrite(uint8_t pid, uint8_t fid,
                                         const uint8_t* param, uint16_t size);
     virtual bool sendConfigurationRead(uint8_t pid, uint8_t fid,
                                        uint8_t& param);
     virtual bool sendStatusQuery(uint8_t pid, uint8_t fid);
+    virtual bool sendControlInstruction(uint8_t pid, uint8_t fid,
+                                        const uint8_t* param, uint16_t size);
 
 private:
     HardwareSerial* _serial;

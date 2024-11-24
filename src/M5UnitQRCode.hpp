@@ -18,6 +18,10 @@ public:
 
     virtual bool begin(void) = 0;
     virtual bool available(void) = 0;
+
+    virtual bool startScan(void) = 0;
+    virtual bool stopScan(void) = 0;
+
     virtual String getFirmwareVersion(void) = 0;
     virtual String getBarcode(void) = 0;
 };

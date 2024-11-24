@@ -16,6 +16,8 @@ public:
     virtual bool isConnected(void);
 
     virtual bool available(void);
+    virtual bool startScan(void);
+    virtual bool stopScan(void);
     virtual String getFirmwareVersion(void);
     virtual String getBarcode(void);
 

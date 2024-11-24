@@ -95,7 +95,13 @@ void setup(void) {
 
 void loop(void) {
     M5.update();
-#if defined(ENABLE_NEWLINE_MODE)
+#if defined(USE_UNIT_UART)
+    if (M5.BtnA.wasPressed()) {
+        keyboard.startScan();
+    }
+#endif
+
+#if defined(ENABLE_NEWLINE_MODE) && defined(USE_UNIT_I2C)
     if (keyboard.isConnected() && M5.BtnA.wasPressed()) {
         newlineMode = !newlineMode;
 #if defined(HAS_LED)

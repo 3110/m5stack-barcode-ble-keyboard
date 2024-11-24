@@ -25,6 +25,14 @@ bool M5UnitQRCodeUART::available(void) {
     return receive();
 }
 
+bool M5UnitQRCodeUART::startScan(void) {
+    return sendControlInstruction(0x75, 0x01, nullptr, 0);
+}
+
+bool M5UnitQRCodeUART::stopScan(void) {
+    return sendControlInstruction(0x75, 0x02, nullptr, 0);
+}
+
 String M5UnitQRCodeUART::getFirmwareVersion(void) {
     if (sendStatusQuery(0x02, 0xC1)) {
         return getReceivedParameter();
@@ -134,12 +142,12 @@ bool M5UnitQRCodeUART::isValidID(uint8_t pid, uint8_t fid) const {
     return getReceivedPID() == pid && getReceivedFID() == fid;
 }
 
-bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
-                                              const uint8_t* param,
-                                              uint16_t size) {
+bool M5UnitQRCodeUART::sendControlCommand(const ProtocolPackageType t,
+                                          uint8_t pid, uint8_t fid,
+                                          const uint8_t* param, uint16_t size) {
     const uint8_t len = (fid >> 6);
     uint8_t cmd[3 + size + (len == 3 ? 2 : 0)] = {
-        static_cast<uint8_t>(ProtocolPackageType::ConfigurationWrite),
+        static_cast<uint8_t>(t),
         pid,
         fid,
     };
@@ -163,12 +171,18 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
                  cmd[2]);
         return false;
     }
-    delay(COMMAND_INTERVAL_MS);
+    return true;
+}
+
+bool M5UnitQRCodeUART::receiveControlCommand(const ProtocolPackageType t,
+                                             uint8_t pid, uint8_t fid,
+                                             const uint8_t* param,
+                                             uint16_t size) {
     if (!receive()) {
         ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
         return false;
     }
-    if (!isValidReply(ProtocolPackageType::ConfigurationWriteReply)) {
+    if (!isValidReply(t)) {
         ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
                  this->_rx_buf[COMMAND_TYPE_OFFSET]);
         return false;
@@ -177,6 +191,7 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
         ESP_LOGE(STR(ESP_LOG_TAG), "Illegal reply: 0x%02X 0x%02X 0x%02X",
                  getReceivedType(), getReceivedPID(), getReceivedFID());
     }
+    const uint8_t len = (fid >> 6);
     if (len == 1) {
         if (this->_rx_buf[3] != param[0]) {
             ESP_LOGE(STR(ESP_LOG_TAG),
@@ -201,6 +216,18 @@ bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
     return true;
 }
 
+bool M5UnitQRCodeUART::sendConfigurationWrite(uint8_t pid, uint8_t fid,
+                                              const uint8_t* param,
+                                              uint16_t size) {
+    if (!sendControlCommand(ProtocolPackageType::ConfigurationWrite, pid, fid,
+                            param, size)) {
+        return false;
+    }
+    delay(COMMAND_INTERVAL_MS);
+    return receiveControlCommand(ProtocolPackageType::ConfigurationWriteReply,
+                                 pid, fid, param, size);
+}
+
 bool M5UnitQRCodeUART::sendConfigurationRead(uint8_t pid, uint8_t fid,
                                              uint8_t& param) {
     const uint8_t t =
@@ -212,17 +239,13 @@ bool M5UnitQRCodeUART::sendConfigurationRead(uint8_t pid, uint8_t fid,
         return false;
     }
     delay(COMMAND_INTERVAL_MS);
-    if (!receive()) {
-        ESP_LOGE(STR(ESP_LOG_TAG), "Failed to receive data.");
+    if (receiveControlCommand(ProtocolPackageType::ConfigurationReadReply, pid,
+                              fid, &param, sizeof(param))) {
+        param = this->_rx_buf[PARAMETER_SIZE_OFFSET];
+        return true;
+    } else {
         return false;
     }
-    if (!isValidReply(ProtocolPackageType::ConfigurationReadReply)) {
-        ESP_LOGE(STR(ESP_LOG_TAG), "Illegal Reply Type: 0x%02X",
-                 this->_rx_buf[COMMAND_TYPE_OFFSET]);
-        return false;
-    }
-    param = this->_rx_buf[PARAMETER_SIZE_OFFSET];
-    return true;
 }
 
 bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
@@ -254,4 +277,11 @@ bool M5UnitQRCodeUART::sendStatusQuery(uint8_t pid, uint8_t fid) {
     ESP_LOGD(STR(ESP_LOG_TAG), "Received Parameter Length: %d",
              getReceivedParameterSize());
     return true;
+}
+
+bool M5UnitQRCodeUART::sendControlInstruction(uint8_t pid, uint8_t fid,
+                                              const uint8_t* param,
+                                              uint16_t size) {
+    return sendControlCommand(ProtocolPackageType::ControlInstruction, pid, fid,
+                              param, size);
 }

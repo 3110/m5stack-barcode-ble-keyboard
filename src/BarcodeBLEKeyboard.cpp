@@ -34,6 +34,14 @@ bool BarcodeBLEKeyboard::available(void) {
     return this->_barcode->available();
 }
 
+bool BarcodeBLEKeyboard::startScan(void) {
+    return this->_barcode->startScan();
+}
+
+bool BarcodeBLEKeyboard::stopScan(void) {
+    return this->_barcode->stopScan();
+}
+
 String BarcodeBLEKeyboard::getFirmwareVersion(void) {
     return this->_barcode->getFirmwareVersion();
 }
